@@ -1,7 +1,16 @@
 import dlp
 import bq
 import csv
+import os
 
+
+def get_key():
+    storage_key = os.path.expanduser('~/.gcp/dlp-dev.json')
+    return storage_key
+
+
+if os.path.isfile(get_key()):
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = get_key()
 
 project_id = input('Project ID: ')
 if len(project_id) < 1:

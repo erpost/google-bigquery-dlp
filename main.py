@@ -26,7 +26,6 @@ with open(outfile, 'w', newline='') as outfile:
                 dlp_distinct_value = dlp.detect(project_id, dist_value)
                 print('Table: {}'.format(table))
                 print('Value: {}'.format(dist_value))
-                print(type(dist_value))
                 print('Info Type: {}'.format(dlp_distinct_value[1]))
                 print('Likelihood: {}'.format(dlp_distinct_value[2]))
                 out_file.writerow([table] + [column] + [dist_value] + [dlp_distinct_value[0]]

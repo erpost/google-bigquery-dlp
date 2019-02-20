@@ -53,7 +53,10 @@ def detect(project_id, content):
     else:
         info_type = 'N/A'
         likelihood = 'N/A'
-        value = content
+        try:
+            value = content
+        except Exception:
+            value = '<empty>'
         # print('No findings.')
 
     return [value, info_type, likelihood]
@@ -61,7 +64,7 @@ def detect(project_id, content):
 
 if __name__ == '__main__':
     project_id = input('Project ID: ')
-    answer = detect(project_id, 0)
+    answer = detect(project_id, None)
     print('Value: {}'. format(answer[0]))
     print('Info Type: {}'.format(answer[1]))
     print(('Likelihood: {}'.format(answer[2])))

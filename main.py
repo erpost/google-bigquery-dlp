@@ -21,9 +21,12 @@ with open(outfile, 'w', newline='') as outfile:
         for column in bq.get_columns(project_id, dataset, table):
             for distinct_value in bq.get_distinct_values(project_id, dataset, table, column):
                 dist_value = str(distinct_value.values()[0])
+                if len(dist_value) < 1:
+                    dist_value = '<empty>'
                 dlp_distinct_value = dlp.detect(project_id, dist_value)
-                print('Project: {}'.format(project_id))
+                print('Table: {}'.format(table))
                 print('Value: {}'.format(dist_value))
+                print(type(dist_value))
                 print('Info Type: {}'.format(dlp_distinct_value[1]))
                 print('Likelihood: {}'.format(dlp_distinct_value[2]))
                 out_file.writerow([table] + [column] + [dist_value] + [dlp_distinct_value[0]]

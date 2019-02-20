@@ -2,6 +2,7 @@ import dlp
 import bq
 import csv
 import os
+import time
 
 
 def get_key():
@@ -39,3 +40,4 @@ with open(outfile, 'w', newline='') as outfile:
                 print('Likelihood: {}'.format(dlp_distinct_value[2]))
                 out_file.writerow([table] + [column] + [dist_value] + [dlp_distinct_value[0]]
                                   + [dlp_distinct_value[1]] + [dlp_distinct_value[2]])
+                time.sleep(.1)

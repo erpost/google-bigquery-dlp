@@ -1,6 +1,5 @@
 from google.cloud import bigquery
-import bq
-import dlp
+
 
 def get_tables(project_id, dataset):
     """gets a list of BigQuery Tables for a given Project/Dataset"""

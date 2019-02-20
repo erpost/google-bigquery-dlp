@@ -41,8 +41,8 @@ def detect(project_id, content):
             try:
                 # print('Quote: {}'.format(finding.quote))
                 value = finding.quote
-            except AttributeError:
-                pass
+            except AttributeError as err:
+                print(err)
             # print('Info type: {}'.format(finding.info_type.name))
             info_type = finding.info_type.name
             # Convert likelihood value to string respresentation.

@@ -1,9 +1,14 @@
-import dlp
+from fsplit.filesplit import FileSplit
+from google.cloud import dlp_v2
 import bq
 import csv
 import os
-import time
 
+dump_file = 'bq_dump.csv'
+distinct_file = 'bq_distinct.txt'
+distinct_set = set()
+dlp_findings = 'dlp_findings.csv'
+split_dir = './splits/'
 
 def get_key():
     storage_key = os.path.expanduser('~/.gcp/dlp-dev.json')
@@ -16,28 +21,79 @@ if os.path.isfile(get_key()):
 project_id = input('Project ID: ')
 if len(project_id) < 1:
     project_id = 'allofus-development'
+# project_id = 'allofus-development'
+
 dataset = input('Data set: ')
 if len(dataset) < 1:
-    dataset = 'test'
+    dataset = 'public20181214'
+# dataset = 'public20181214'
 
-outfile = 'bq_dlp.csv'
-
-with open(outfile, 'w', newline='') as outfile:
-    out_file = csv.writer(outfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
-    out_file.writerow(['Table'] + ['Column'] + ['Value'] + ['DLP Value'] + ['DLP Info Type'] + ['Likelihood'])
+# write full dump file to CSV
+with open(dump_file, 'w', newline='') as dump_file:
+    out_file = csv.writer(dump_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
+    out_file.writerow(['Table'] + ['Column'] + ['Value'])
 
     for table in bq.get_tables(project_id, dataset):
-        print('### Table: {} ###'.format(table))
+        print('Reading Table: {}'.format(table))
         for column in bq.get_columns(project_id, dataset, table):
-            for distinct_value in bq.get_distinct_values(project_id, dataset, table, column):
-                dist_value = str(distinct_value.values()[0])
-                if len(dist_value) < 1:
-                    dist_value = '<empty>'
-                dlp_distinct_value = dlp.detect(project_id, dist_value)
-                print('Table: {}'.format(table))
-                print('Value: {}'.format(dist_value))
-                print('Info Type: {}'.format(dlp_distinct_value[1]))
-                print('Likelihood: {}'.format(dlp_distinct_value[2]))
-                out_file.writerow([table] + [column] + [dist_value] + [dlp_distinct_value[0]]
-                                  + [dlp_distinct_value[1]] + [dlp_distinct_value[2]])
-                time.sleep(.1)
+            for value in bq.get_distinct_values(project_id, dataset, table, column):
+                str_value = str(value.values()[0])
+                if len(str_value) < 1:
+                    str_value = '<empty>'
+                out_file.writerow([table] + [column] + [str_value])
+                if type(value.values()[0]) == str:
+                    distinct_set.add(value.values()[0])
+
+# write distinct lines to text
+with open(distinct_file, 'w') as distinct_file:
+    for item in distinct_set:
+        distinct_file.write('{}\n'.format(item))
+
+# split distinct file into multiple files for DLP
+fs = FileSplit(file='bq_distinct.txt', splitsize=524288, output_dir='splits')
+fs.split()
+
+# instantiate DLP
+dlp_client = dlp_v2.DlpServiceClient()
+
+info_types = [{'name': 'PERSON_NAME'}, {'name': 'DATE_OF_BIRTH'},
+              {'name': 'LOCATION'}, {'name': 'US_INDIVIDUAL_TAXPAYER_IDENTIFICATION_NUMBER'},
+              {'name': 'US_SOCIAL_SECURITY_NUMBER'}, {'name': 'US_PASSPORT'},
+              {'name': 'US_DEA_NUMBER'}, {'name': 'US_HEALTHCARE_NPI'}]
+
+inspect_config = {
+    'info_types': info_types,
+    'min_likelihood': 'LIKELY',
+    'include_quote': True,
+    'limits': {'max_findings_per_request': None},
+}
+
+# open and write to DLP CSV file
+with open(dlp_findings, 'w', newline='') as findings:
+    out_file = csv.writer(findings, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
+    out_file.writerow(['Value'] + ['InfoType'] + ['Likelihood'])
+
+    # iterate over split files
+    for split_file in os.listdir(split_dir):
+        split_path = split_dir + split_file
+        if os.stat(split_path).st_size == 0:
+            pass
+        with open(split_path, mode='rb') as f:
+            item = {'byte_item': {'type': 5, 'data': f.read()}}
+
+        parent = dlp_client.project_path(project_id)
+        response = dlp_client.inspect_content(parent, inspect_config, item)
+
+        if response.result.findings:
+            for finding in response.result.findings:
+                try:
+                    print('Quote: {} | Info type: {} | Likelihood: {}'
+                          .format(finding.quote, finding.info_type.name, finding.likelihood))
+                    value = finding.quote
+                    info_type = finding.info_type.name
+                    likelihood = finding.likelihood
+                    out_file.writerow([value] + [info_type] + [likelihood])
+                except AttributeError as err:
+                    print(err)
+        else:
+            pass

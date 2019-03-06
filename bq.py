@@ -43,4 +43,3 @@ if __name__ == '__main__':
         for column in get_columns(project_id, dataset, table):
             for distinct_value in get_distinct_values(project_id, dataset, table, column):
                 print(distinct_value.values()[0])
-                print(type(distinct_value.values()[0]))

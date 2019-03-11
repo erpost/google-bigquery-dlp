@@ -21,14 +21,8 @@ if os.path.isfile(get_key()):
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = get_key()
 
 project_id = input('Project ID: ')
-if len(project_id) < 1:
-    project_id = 'allofus-development'
-# project_id = 'allofus-development'
 
 dataset = input('Data set: ')
-if len(dataset) < 1:
-    dataset = 'public20181214'
-# dataset = 'public20181214'
 
 # write full dump file to CSV
 with open(dump_file, 'w', newline='') as dump_file:
@@ -58,14 +52,17 @@ fs.split()
 # instantiate DLP client
 dlp_client = dlp_v2.DlpServiceClient()
 
-info_types = [{'name': 'PERSON_NAME'}, {'name': 'DATE_OF_BIRTH'},
+info_types = [{'name': 'DATE_OF_BIRTH'},
               {'name': 'LOCATION'}, {'name': 'US_INDIVIDUAL_TAXPAYER_IDENTIFICATION_NUMBER'},
               {'name': 'US_SOCIAL_SECURITY_NUMBER'}, {'name': 'US_PASSPORT'},
               {'name': 'US_DEA_NUMBER'}, {'name': 'US_HEALTHCARE_NPI'}]
 
+# info_types = [{'name': 'ALL_BASIC'}]
+
+
 inspect_config = {
     'info_types': info_types,
-    'min_likelihood': 'LIKELY',
+    'min_likelihood': None,
     'include_quote': True,
     'limits': {'max_findings_per_request': None},
 }
@@ -91,7 +88,8 @@ with open(dlp_findings, 'w', newline='') as findings:
                 try:
                     value = finding.quote
                     info_type = finding.info_type.name
-                    likelihood = finding.likelihood
+                    likelihood = (dlp_v2.types.Finding.DESCRIPTOR.fields_by_name['likelihood']
+                                  .enum_type.values_by_number[finding.likelihood].name)
                     if value in dlp_findings_list:
                         pass
                     else:

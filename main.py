@@ -52,7 +52,7 @@ fs.split()
 # instantiate DLP client
 dlp_client = dlp_v2.DlpServiceClient()
 
-info_types = [{'name': 'LAST_NAME'},
+info_types = [{'name': 'PERSON_NAME'},
               {'name': 'US_SOCIAL_SECURITY_NUMBER'},
               {'name': 'US_HEALTHCARE_NPI'}]
 

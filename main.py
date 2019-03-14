@@ -53,11 +53,10 @@ fs.split()
 dlp_client = dlp_v2.DlpServiceClient()
 
 info_types = [{'name': 'PERSON_NAME'},
+              {'name': 'DATE_OF_BIRTH'},
+              {'name': 'PHONE_NUMBER'},
               {'name': 'US_SOCIAL_SECURITY_NUMBER'},
               {'name': 'US_HEALTHCARE_NPI'}]
-
-# info_types = [{'name': 'ALL_BASIC'}]
-
 
 inspect_config = {
     'info_types': info_types,

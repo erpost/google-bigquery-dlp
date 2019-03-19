@@ -11,10 +11,11 @@ distinct_set = set()
 dlp_findings_list = []
 dlp_findings = 'dlp_findings.csv'
 split_dir = './splits/'
+key_file = os.path.expanduser('~/.gcp/dlp-dev.json')
 
 # use Service Account key if present
-if os.path.isfile(get_key()):
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.path.expanduser('~/.gcp/dlp-dev.json')
+if os.path.isfile(key_file):
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = key_file
 
 # clean up files and folders from previous run
 if os.path.exists(dump_file):

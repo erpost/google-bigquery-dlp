@@ -12,25 +12,17 @@ dlp_findings_list = []
 dlp_findings = 'dlp_findings.csv'
 split_dir = './splits/'
 
-
-def get_key():
-    storage_key = os.path.expanduser('~/.gcp/dlp-dev.json')
-    return storage_key
-
-
+# use Service Account key if present
 if os.path.isfile(get_key()):
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = get_key()
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.path.expanduser('~/.gcp/dlp-dev.json')
 
 # clean up files and folders from previous run
 if os.path.exists(dump_file):
     os.remove(dump_file)
-
 if os.path.exists(distinct_file):
     os.remove(distinct_file)
-
 if os.path.exists(dlp_findings):
     os.remove(dlp_findings)
-
 if os.path.exists(split_dir):
     shutil.rmtree(split_dir)
 

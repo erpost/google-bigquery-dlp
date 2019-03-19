@@ -112,6 +112,3 @@ with open(dlp_findings, 'w', newline='') as findings:
         else:
             print('No findings')
             pass
-
-# remove splits directory
-shutil.rmtree(split_dir)

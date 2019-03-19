@@ -3,6 +3,7 @@ from google.cloud import dlp_v2
 import bq
 import csv
 import os
+import shutil
 
 dump_file = 'bq_dump.csv'
 distinct_file = 'bq_distinct.txt'
@@ -20,9 +21,25 @@ def get_key():
 if os.path.isfile(get_key()):
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = get_key()
 
-project_id = input('Project ID: ')
+# clean up files and folders from previous run
+if os.path.exists(dump_file):
+    os.remove(dump_file)
 
+if os.path.exists(distinct_file):
+    os.remove(distinct_file)
+
+if os.path.exists(dlp_findings):
+    os.remove(dlp_findings)
+
+if os.path.exists(split_dir):
+    shutil.rmtree(split_dir)
+
+# ask for GCP and BQ inputs
+project_id = input('Project ID: ')
 dataset = input('Data set: ')
+
+# recreate empty splits directory
+os.mkdir(split_dir)
 
 # write full dump file to CSV
 with open(dump_file, 'w', newline='') as dump_file:
@@ -52,15 +69,15 @@ fs.split()
 # instantiate DLP client
 dlp_client = dlp_v2.DlpServiceClient()
 
+# info_types = [{'name': 'ALL_BASIC'}]
+
 info_types = [{'name': 'PERSON_NAME'},
-              {'name': 'DATE_OF_BIRTH'},
-              {'name': 'PHONE_NUMBER'},
               {'name': 'US_SOCIAL_SECURITY_NUMBER'},
               {'name': 'US_HEALTHCARE_NPI'}]
 
 inspect_config = {
     'info_types': info_types,
-    'min_likelihood': None,
+    'min_likelihood': 'LIKELY',
     'include_quote': True,
     'limits': {'max_findings_per_request': None},
 }
@@ -72,7 +89,8 @@ with open(dlp_findings, 'w', newline='') as findings:
 
     # iterate over split files
     for split_file in os.listdir(split_dir):
-        split_path = split_dir + split_file
+        split_path =\
+            split_dir + split_file
         if os.stat(split_path).st_size == 0:
             pass
         with open(split_path, mode='rb') as f:
@@ -101,3 +119,6 @@ with open(dlp_findings, 'w', newline='') as findings:
         else:
             print('No findings')
             pass
+
+# remove splits directory
+shutil.rmtree(split_dir)
